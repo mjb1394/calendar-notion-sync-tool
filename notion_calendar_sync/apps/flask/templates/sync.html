@@ -1,0 +1,720 @@
+{% extends "base.html" %}
+{% block title %}Sync & Review - NurseSync Pro{% endblock %}
+
+{% block content %}
+<header class="content-header">
+    <h1>Sync & Study Tools</h1>
+    <p>Manage your Notion integration, create study schedules, and set up spaced repetition for optimal learning retention.</p>
+</header>
+
+<div class="sync-dashboard">
+    <!-- Sync Status Card -->
+    <div class="card sync-status-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span class="card-icon">🔄</span>
+                Sync Status
+            </h3>
+            <div class="sync-indicator">
+                <div class="status-dot online"></div>
+                <span class="status-text">Connected</span>
+            </div>
+        </div>
+        <div class="sync-stats">
+            <div class="stat-item">
+                <div class="stat-value">{{ last_sync_time or 'Never' }}</div>
+                <div class="stat-label">Last Sync</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ sync_count or 0 }}</div>
+                <div class="stat-label">Items Synced</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ error_count or 0 }}</div>
+                <div class="stat-label">Errors</div>
+            </div>
+        </div>
+        <div class="sync-actions">
+            <form method="POST" action="{{ url_for('main.run_sync_route') }}" class="sync-form">
+                <button type="submit" class="btn btn-primary sync-btn">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">Sync Now</span>
+                    <span class="btn-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        Syncing...
+                    </span>
+                </button>
+            </form>
+            <button class="btn btn-outline" onclick="showSyncHistory()">
+                <span>📊</span>
+                View History
+            </button>
+        </div>
+    </div>
+
+    <!-- Study Tools Grid -->
+    <div class="study-tools-grid">
+        <!-- Study Planner -->
+        <div class="card tool-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">📚</span>
+                    Study Planner
+                </h3>
+            </div>
+            <p class="tool-description">Create optimized study schedules for upcoming exams with automatic session distribution.</p>
+            
+            <form method="POST" action="{{ url_for('main.run_plan_study_route') }}" class="tool-form">
+                <div class="form-group">
+                    <label for="exam_title" class="form-label">Exam/Subject</label>
+                    <input type="text" name="exam_title" id="exam_title" class="form-input" 
+                           placeholder="e.g., Pharmacology Midterm" required>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="exam_date" class="form-label">Exam Date</label>
+                        <input type="date" name="exam_date" id="exam_date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="total_hours" class="form-label">Total Study Hours</label>
+                        <input type="number" name="total_hours" id="total_hours" class="form-input" 
+                               value="10" min="1" max="100" required>
+                    </div>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="session_duration" class="form-label">Session Duration (hours)</label>
+                        <select name="session_duration" id="session_duration" class="form-select">
+                            <option value="1">1 hour</option>
+                            <option value="1.5">1.5 hours</option>
+                            <option value="2" selected>2 hours</option>
+                            <option value="2.5">2.5 hours</option>
+                            <option value="3">3 hours</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty" class="form-label">Difficulty Level</label>
+                        <select name="difficulty" id="difficulty" class="form-select">
+                            <option value="easy">🟢 Easy</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="hard">🟠 Hard</option>
+                            <option value="expert">🔴 Expert</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="include_breaks" checked>
+                        <span class="checkmark"></span>
+                        Include break reminders
+                    </label>
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="weekend_sessions">
+                        <span class="checkmark"></span>
+                        Schedule weekend sessions
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-success tool-submit">
+                    <span>🎯</span>
+                    Create Study Plan
+                </button>
+            </form>
+        </div>
+
+        <!-- Spaced Repetition -->
+        <div class="card tool-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">🧠</span>
+                    Spaced Repetition
+                </h3>
+            </div>
+            <p class="tool-description">Set up automatic review reminders based on proven spaced repetition intervals for better retention.</p>
+            
+            <form method="POST" action="{{ url_for('main.run_spaced_repetition_route') }}" class="tool-form">
+                <div class="form-group">
+                    <label for="task_uid" class="form-label">Source Task/Topic</label>
+                    <input type="text" name="task_uid" id="task_uid" class="form-input" 
+                           placeholder="Enter task UID or topic identifier" required>
+                    <small class="form-help">Find task UIDs in your Notion database or recent sync logs</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="repetition_type" class="form-label">Repetition Schedule</label>
+                    <select name="repetition_type" id="repetition_type" class="form-select" onchange="updateIntervals()">
+                        <option value="standard">📚 Standard (1, 3, 7, 14, 30 days)</option>
+                        <option value="intensive">⚡ Intensive (1, 2, 4, 8, 16 days)</option>
+                        <option value="relaxed">🌱 Relaxed (2, 7, 21, 60 days)</option>
+                        <option value="custom">⚙️ Custom</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="custom-intervals" style="display: none;">
+                    <label for="intervals" class="form-label">Custom Intervals (days)</label>
+                    <input type="text" name="intervals" id="intervals" class="form-input" 
+                           placeholder="e.g., 1,3,7,14,30">
+                    <small class="form-help">Separate intervals with commas</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="review_type" class="form-label">Review Focus</label>
+                    <select name="review_type" id="review_type" class="form-select">
+                        <option value="concepts">💡 Key Concepts</option>
+                        <option value="definitions">📖 Definitions</option>
+                        <option value="procedures">🔧 Procedures</option>
+                        <option value="calculations">🧮 Calculations</option>
+                        <option value="case-studies">📋 Case Studies</option>
+                    </select>
+                </div>
+                
+                <div class="form-options">
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="include_notes" checked>
+                        <span class="checkmark"></span>
+                        Include original notes in reviews
+                    </label>
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="adaptive_scheduling">
+                        <span class="checkmark"></span>
+                        Adaptive scheduling based on performance
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-success tool-submit">
+                    <span>🔄</span>
+                    Schedule Reviews
+                </button>
+            </form>
+        </div>
+
+        <!-- Weekly Review Generator -->
+        <div class="card tool-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">📝</span>
+                    Weekly Review
+                </h3>
+            </div>
+            <p class="tool-description">Generate comprehensive weekly review pages with accomplishments, insights, and next week's priorities.</p>
+            
+            <div class="review-preview">
+                <div class="preview-section">
+                    <h4>📊 This Week's Stats</h4>
+                    <div class="preview-stats">
+                        <span class="preview-stat">12 tasks completed</span>
+                        <span class="preview-stat">8 study sessions</span>
+                        <span class="preview-stat">3 exams passed</span>
+                    </div>
+                </div>
+                <div class="preview-section">
+                    <h4>🎯 Focus Areas</h4>
+                    <ul class="preview-list">
+                        <li>Pharmacology review sessions</li>
+                        <li>Clinical skills practice</li>
+                        <li>Care plan development</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <form method="POST" action="{{ url_for('main.run_weekly_review_route') }}" class="tool-form">
+                <div class="form-group">
+                    <label for="review_period" class="form-label">Review Period</label>
+                    <select name="review_period" id="review_period" class="form-select">
+                        <option value="current">📅 Current Week</option>
+                        <option value="previous">⏮️ Previous Week</option>
+                        <option value="custom">📆 Custom Range</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="custom-range" style="display: none;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" name="start_date" id="start_date" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" name="end_date" id="end_date" class="form-input">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-options">
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="include_metrics" checked>
+                        <span class="checkmark"></span>
+                        Include performance metrics
+                    </label>
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="include_reflections" checked>
+                        <span class="checkmark"></span>
+                        Add reflection prompts
+                    </label>
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="include_goals">
+                        <span class="checkmark"></span>
+                        Set goals for next week
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-success tool-submit">
+                    <span>📋</span>
+                    Generate Review
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Sync History Modal -->
+<div id="sync-history-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Sync History</h3>
+            <button class="modal-close" onclick="closeSyncHistory()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="history-list">
+                <div class="history-item success">
+                    <div class="history-icon">✅</div>
+                    <div class="history-content">
+                        <div class="history-title">Successful Sync</div>
+                        <div class="history-details">15 items synced • 2 minutes ago</div>
+                    </div>
+                    <div class="history-time">14:32</div>
+                </div>
+                <div class="history-item success">
+                    <div class="history-icon">✅</div>
+                    <div class="history-content">
+                        <div class="history-title">Successful Sync</div>
+                        <div class="history-details">8 items synced • 1 hour ago</div>
+                    </div>
+                    <div class="history-time">13:15</div>
+                </div>
+                <div class="history-item warning">
+                    <div class="history-icon">⚠️</div>
+                    <div class="history-content">
+                        <div class="history-title">Partial Sync</div>
+                        <div class="history-details">12 items synced, 2 warnings • 3 hours ago</div>
+                    </div>
+                    <div class="history-time">11:45</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setupSyncForms();
+    setupFormDependencies();
+    updateExamDateMin();
+});
+
+function setupSyncForms() {
+    document.querySelectorAll('.tool-form, .sync-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnLoading = submitBtn.querySelector('.btn-loading');
+            
+            if (btnText && btnLoading) {
+                btnText.style.display = 'none';
+                btnLoading.style.display = 'flex';
+            }
+            
+            submitBtn.disabled = true;
+            window.nurseSyncApp.showLoading('Processing request...');
+        });
+    });
+}
+
+function setupFormDependencies() {
+    // Repetition type change
+    document.getElementById('repetition_type').addEventListener('change', updateIntervals);
+    
+    // Review period change
+    document.getElementById('review_period').addEventListener('change', function() {
+        const customRange = document.getElementById('custom-range');
+        customRange.style.display = this.value === 'custom' ? 'block' : 'none';
+    });
+}
+
+function updateIntervals() {
+    const type = document.getElementById('repetition_type').value;
+    const customDiv = document.getElementById('custom-intervals');
+    const intervalsInput = document.getElementById('intervals');
+    
+    if (type === 'custom') {
+        customDiv.style.display = 'block';
+    } else {
+        customDiv.style.display = 'none';
+        
+        const intervals = {
+            'standard': '1,3,7,14,30',
+            'intensive': '1,2,4,8,16',
+            'relaxed': '2,7,21,60'
+        };
+        
+        intervalsInput.value = intervals[type] || '1,3,7,14,30';
+    }
+}
+
+function updateExamDateMin() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('exam_date').min = today;
+    
+    // Set default to one week from now
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    document.getElementById('exam_date').value = nextWeek.toISOString().split('T')[0];
+}
+
+function showSyncHistory() {
+    document.getElementById('sync-history-modal').classList.add('active');
+}
+
+function closeSyncHistory() {
+    document.getElementById('sync-history-modal').classList.remove('active');
+}
+
+// Auto-refresh sync status every 30 seconds
+setInterval(function() {
+    // In a real app, this would fetch actual sync status
+    console.log('Checking sync status...');
+}, 30000);
+</script>
+
+<style>
+/* Sync Page Specific Styles */
+.sync-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2xl);
+}
+
+.sync-status-card {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.sync-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--medical-green);
+    animation: pulse 2s infinite;
+}
+
+.status-text {
+    font-size: 0.875rem;
+    color: var(--medical-green);
+    font-weight: 500;
+}
+
+.sync-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--spacing-lg);
+    margin: var(--spacing-xl) 0;
+}
+
+.stat-item {
+    text-align: center;
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sync-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+}
+
+.sync-btn {
+    position: relative;
+    min-width: 140px;
+}
+
+.btn-loading {
+    display: none;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.study-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--spacing-xl);
+}
+
+.tool-card {
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+}
+
+.tool-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+.tool-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+.form-help {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+}
+
+.form-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.option-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    transition: color var(--transition-normal);
+}
+
+.option-checkbox:hover {
+    color: var(--text-primary);
+}
+
+.checkmark {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    position: relative;
+    flex-shrink: 0;
+    transition: all var(--transition-normal);
+}
+
+.option-checkbox input:checked + .checkmark {
+    background: var(--gradient-primary);
+    border-color: var(--medical-blue);
+}
+
+.option-checkbox input:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.option-checkbox input {
+    display: none;
+}
+
+.tool-submit {
+    margin-top: auto;
+    align-self: stretch;
+}
+
+.review-preview {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.preview-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.preview-section:last-child {
+    margin-bottom: 0;
+}
+
+.preview-section h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.preview-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.preview-stat {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: rgba(59, 130, 246, 0.1);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+}
+
+.preview-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.preview-list li {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding: var(--spacing-xs) 0;
+    position: relative;
+    padding-left: var(--spacing-lg);
+}
+
+.preview-list li::before {
+    content: '•';
+    color: var(--medical-blue);
+    position: absolute;
+    left: 0;
+}
+
+/* History Modal */
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.history-item.success {
+    border-left: 4px solid var(--medical-green);
+}
+
+.history-item.warning {
+    border-left: 4px solid var(--medical-amber);
+}
+
+.history-item.error {
+    border-left: 4px solid var(--medical-red);
+}
+
+.history-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.history-content {
+    flex: 1;
+}
+
+.history-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.history-details {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.history-time {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .study-tools-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .sync-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .sync-actions {
+        flex-direction: column;
+    }
+    
+    .preview-stats {
+        flex-direction: column;
+    }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
