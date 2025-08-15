@@ -1,0 +1,23 @@
+name: notion_calendar_sync
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9.*
+  - pydantic
+  - pydantic-settings
+  - requests
+  - python-dotenv
+  - typer
+  - tenacity
+  - reportlab
+  - python-docx
+  - babel
+  - python-dateutil
+  - tk
+  - flask
+  - pip
+  - pip:
+    - ics
+    - waitress
+    - eval_type_backport
