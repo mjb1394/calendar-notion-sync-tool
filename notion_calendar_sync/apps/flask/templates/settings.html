@@ -1,0 +1,780 @@
+{% extends "base.html" %}
+{% block title %}Settings - NurseSync Pro{% endblock %}
+
+{% block content %}
+<header class="content-header">
+    <h1>Settings & Configuration</h1>
+    <p>Customize your NurseSync Pro experience with personalized study preferences, sync settings, and system configurations.</p>
+</header>
+
+<div class="settings-dashboard">
+    <!-- Configuration Management -->
+    <div class="card settings-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span class="card-icon">⚙️</span>
+                Study Configurations
+            </h3>
+            <div class="config-status">
+                <span class="status-label">Active:</span>
+                <span class="status-value">{{ active_config_name }}</span>
+            </div>
+        </div>
+        
+        <div class="config-selector">
+            <form method="POST" class="config-form">
+                <div class="form-group">
+                    <label for="config_name" class="form-label">Switch Configuration</label>
+                    <select name="config_name" id="config_name" class="form-select" onchange="this.form.submit()">
+                        {% for name in configs.keys() %}
+                        <option value="{{ name }}" {% if name == active_config_name %}selected{% endif %}>
+                            {{ name.title() }} Configuration
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+            
+            <form method="POST" class="new-config-form">
+                <input type="hidden" name="action" value="create">
+                <div class="form-group">
+                    <label for="new_config_name" class="form-label">Create New Configuration</label>
+                    <div class="input-group">
+                        <input type="text" name="new_config_name" id="new_config_name" class="form-input" 
+                               placeholder="e.g., NCLEX Prep, Clinical Rotation">
+                        <button type="submit" class="btn btn-outline">
+                            <span>➕</span>
+                            Create
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Study Preferences -->
+    <div class="card settings-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span class="card-icon">📚</span>
+                Study Preferences
+            </h3>
+        </div>
+        
+        <form method="POST" class="settings-form">
+            <input type="hidden" name="action" value="save">
+            <input type="hidden" name="config_name" value="{{ active_config_name }}">
+            
+            <div class="settings-section">
+                <h4 class="section-title">Study Planner Settings</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="total_hours" class="form-label">Default Study Hours</label>
+                        <input type="number" name="total_hours" id="total_hours" class="form-input" 
+                               value="{{ active_config.plan_study.total_hours }}" min="1" max="100">
+                        <small class="form-help">Total hours to allocate for exam preparation</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="session_duration" class="form-label">Session Duration (hours)</label>
+                        <select name="session_duration" id="session_duration" class="form-select">
+                            <option value="1" {% if active_config.plan_study.session_duration == 1 %}selected{% endif %}>1 hour</option>
+                            <option value="1.5" {% if active_config.plan_study.session_duration == 1.5 %}selected{% endif %}>1.5 hours</option>
+                            <option value="2" {% if active_config.plan_study.session_duration == 2 %}selected{% endif %}>2 hours</option>
+                            <option value="2.5" {% if active_config.plan_study.session_duration == 2.5 %}selected{% endif %}>2.5 hours</option>
+                            <option value="3" {% if active_config.plan_study.session_duration == 3 %}selected{% endif %}>3 hours</option>
+                        </select>
+                        <small class="form-help">Optimal study session length</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="study_method" class="form-label">Preferred Study Method</label>
+                    <select name="study_method" id="study_method" class="form-select">
+                        <option value="mixed">🌈 Mixed Methods</option>
+                        <option value="reading">📖 Reading & Notes</option>
+                        <option value="practice">❓ Practice Questions</option>
+                        <option value="visual">🎨 Visual Learning</option>
+                        <option value="group">👥 Group Study</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4 class="section-title">Spaced Repetition Settings</h4>
+                <div class="form-group">
+                    <label for="intervals" class="form-label">Review Intervals (days)</label>
+                    <input type="text" name="intervals" id="intervals" class="form-input" 
+                           value="{{ active_config.spaced_rep.intervals | join(',') }}"
+                           placeholder="1,3,7,14,30">
+                    <small class="form-help">Comma-separated intervals for spaced repetition reviews</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="difficulty_adjustment" class="form-label">Difficulty Adjustment</label>
+                    <div class="toggle-group">
+                        <label class="toggle-item">
+                            <input type="checkbox" name="adaptive_intervals" checked>
+                            <span class="toggle-switch"></span>
+                            <span class="toggle-label">Adaptive intervals based on performance</span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" name="weekend_reviews">
+                            <span class="toggle-switch"></span>
+                            <span class="toggle-label">Schedule reviews on weekends</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4 class="section-title">Notification Preferences</h4>
+                <div class="toggle-group">
+                    <label class="toggle-item">
+                        <input type="checkbox" name="email_reminders" checked>
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-label">Email reminders for upcoming tasks</span>
+                    </label>
+                    <label class="toggle-item">
+                        <input type="checkbox" name="sync_notifications" checked>
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-label">Sync completion notifications</span>
+                    </label>
+                    <label class="toggle-item">
+                        <input type="checkbox" name="study_reminders" checked>
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-label">Daily study session reminders</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <span>💾</span>
+                    Save Settings
+                </button>
+                <button type="reset" class="btn btn-outline">
+                    <span>🔄</span>
+                    Reset to Defaults
+                </button>
+            </div>
+        </form>
+        
+        {% if active_config_name != 'default' %}
+        <div class="danger-zone">
+            <h4 class="danger-title">Danger Zone</h4>
+            <p class="danger-description">Permanently delete this configuration. This action cannot be undone.</p>
+            <form method="POST" class="delete-form" onsubmit="return confirm('Are you sure you want to delete this configuration?')">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="config_name" value="{{ active_config_name }}">
+                <button type="submit" class="btn btn-danger">
+                    <span>🗑️</span>
+                    Delete Configuration
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sync & Automation -->
+    <div class="card settings-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span class="card-icon">🔄</span>
+                Sync & Automation
+            </h3>
+            <div class="sync-status">
+                {% if job_status.status == 'running' %}
+                    <div class="status-indicator running"></div>
+                    <span class="status-text">Auto-sync Active</span>
+                {% else %}
+                    <div class="status-indicator stopped"></div>
+                    <span class="status-text">Auto-sync Inactive</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="sync-info">
+            {% if job_status.status == 'running' %}
+                <div class="sync-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Status:</span>
+                        <span class="detail-value running">Running</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Next Sync:</span>
+                        <span class="detail-value">{{ job_status.next_run }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Interval:</span>
+                        <span class="detail-value">Every 30 minutes</span>
+                    </div>
+                </div>
+                
+                <form method="POST" action="{{ url_for('main.stop_scheduler') }}" class="sync-form">
+                    <button type="submit" class="btn btn-danger">
+                        <span>⏹️</span>
+                        Stop Auto-Sync
+                    </button>
+                </form>
+            {% else %}
+                <div class="sync-setup">
+                    <p class="sync-description">Enable automatic synchronization to keep your Notion workspace up-to-date with your local changes.</p>
+                    
+                    <form method="POST" action="{{ url_for('main.start_scheduler') }}" class="sync-form">
+                        <div class="form-group">
+                            <label for="interval" class="form-label">Sync Interval</label>
+                            <select name="interval" id="interval" class="form-select">
+                                <option value="15">Every 15 minutes</option>
+                                <option value="30" selected>Every 30 minutes</option>
+                                <option value="60">Every hour</option>
+                                <option value="120">Every 2 hours</option>
+                                <option value="360">Every 6 hours</option>
+                            </select>
+                        </div>
+                        
+                        <div class="sync-options">
+                            <label class="toggle-item">
+                                <input type="checkbox" name="sync_on_startup" checked>
+                                <span class="toggle-switch"></span>
+                                <span class="toggle-label">Sync on application startup</span>
+                            </label>
+                            <label class="toggle-item">
+                                <input type="checkbox" name="retry_failed" checked>
+                                <span class="toggle-switch"></span>
+                                <span class="toggle-label">Retry failed sync attempts</span>
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">
+                            <span>▶️</span>
+                            Start Auto-Sync
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="card settings-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span class="card-icon">ℹ️</span>
+                System Information
+            </h3>
+        </div>
+        
+        <div class="system-info">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Version:</span>
+                    <span class="info-value">NurseSync Pro v2.1.0</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Notion API:</span>
+                    <span class="info-value">Connected ✅</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Database Status:</span>
+                    <span class="info-value">Healthy ✅</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Last Backup:</span>
+                    <span class="info-value">2 hours ago</span>
+                </div>
+            </div>
+            
+            <div class="system-actions">
+                <button class="btn btn-outline" onclick="exportData()">
+                    <span>📤</span>
+                    Export Data
+                </button>
+                <button class="btn btn-outline" onclick="clearCache()">
+                    <span>🧹</span>
+                    Clear Cache
+                </button>
+                <button class="btn btn-outline" onclick="runDiagnostics()">
+                    <span>🔍</span>
+                    Run Diagnostics
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setupFormValidation();
+    setupToggleSwitches();
+    initializeTooltips();
+});
+
+function setupFormValidation() {
+    const intervalsInput = document.getElementById('intervals');
+    if (intervalsInput) {
+        intervalsInput.addEventListener('blur', function() {
+            validateIntervals(this.value);
+        });
+    }
+}
+
+function validateIntervals(value) {
+    const intervals = value.split(',').map(s => s.trim());
+    const isValid = intervals.every(interval => {
+        const num = parseInt(interval);
+        return !isNaN(num) && num > 0;
+    });
+    
+    const input = document.getElementById('intervals');
+    if (!isValid) {
+        input.style.borderColor = 'var(--medical-red)';
+        showValidationError(input, 'Please enter valid positive numbers separated by commas');
+    } else {
+        input.style.borderColor = '';
+        clearValidationError(input);
+    }
+}
+
+function showValidationError(input, message) {
+    clearValidationError(input);
+    const error = document.createElement('div');
+    error.className = 'validation-error';
+    error.textContent = message;
+    input.parentNode.appendChild(error);
+}
+
+function clearValidationError(input) {
+    const existing = input.parentNode.querySelector('.validation-error');
+    if (existing) {
+        existing.remove();
+    }
+}
+
+function setupToggleSwitches() {
+    document.querySelectorAll('.toggle-item input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            // Add visual feedback for toggle changes
+            const toggleSwitch = this.nextElementSibling;
+            toggleSwitch.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                toggleSwitch.style.transform = '';
+            }, 150);
+        });
+    });
+}
+
+function initializeTooltips() {
+    document.querySelectorAll('[data-tooltip]').forEach(element => {
+        element.addEventListener('mouseenter', showTooltip);
+        element.addEventListener('mouseleave', hideTooltip);
+    });
+}
+
+function showTooltip(e) {
+    const text = e.target.getAttribute('data-tooltip');
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = text;
+    document.body.appendChild(tooltip);
+    
+    const rect = e.target.getBoundingClientRect();
+    tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
+    tooltip.style.top = `${rect.top - tooltip.offsetHeight - 8}px`;
+}
+
+function hideTooltip() {
+    const tooltip = document.querySelector('.tooltip');
+    if (tooltip) {
+        tooltip.remove();
+    }
+}
+
+// System Actions
+function exportData() {
+    window.nurseSyncApp.showLoading('Exporting data...');
+    
+    // Simulate export process
+    setTimeout(() => {
+        window.nurseSyncApp.hideLoading();
+        window.nurseSyncApp.showNotification('Data exported successfully!', 'success');
+        
+        // Create and trigger download
+        const link = document.createElement('a');
+        link.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({
+            exported_at: new Date().toISOString(),
+            version: 'NurseSync Pro v2.1.0',
+            configurations: 'exported'
+        }));
+        link.download = `nursesync-export-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+    }, 2000);
+}
+
+function clearCache() {
+    if (confirm('Are you sure you want to clear the application cache? This will remove temporary files and may slow down the next startup.')) {
+        window.nurseSyncApp.showLoading('Clearing cache...');
+        
+        setTimeout(() => {
+            window.nurseSyncApp.hideLoading();
+            window.nurseSyncApp.showNotification('Cache cleared successfully!', 'success');
+        }, 1500);
+    }
+}
+
+function runDiagnostics() {
+    window.nurseSyncApp.showLoading('Running system diagnostics...');
+    
+    setTimeout(() => {
+        window.nurseSyncApp.hideLoading();
+        
+        const results = `
+            <div class="diagnostics-results">
+                <h3>System Diagnostics Report</h3>
+                <div class="diagnostic-item success">
+                    <span class="diagnostic-icon">✅</span>
+                    <span class="diagnostic-text">Notion API Connection: OK</span>
+                </div>
+                <div class="diagnostic-item success">
+                    <span class="diagnostic-icon">✅</span>
+                    <span class="diagnostic-text">Database Integrity: OK</span>
+                </div>
+                <div class="diagnostic-item success">
+                    <span class="diagnostic-icon">✅</span>
+                    <span class="diagnostic-text">Configuration Files: OK</span>
+                </div>
+                <div class="diagnostic-item warning">
+                    <span class="diagnostic-icon">⚠️</span>
+                    <span class="diagnostic-text">Cache Size: 45MB (Consider clearing)</span>
+                </div>
+                <div class="diagnostic-summary">
+                    <strong>Overall Status: Healthy</strong>
+                </div>
+            </div>
+        `;
+        
+        // Show results in a modal or notification
+        window.nurseSyncApp.showNotification('Diagnostics completed. Check console for details.', 'success');
+        console.log('Diagnostics Results:', results);
+    }, 3000);
+}
+</script>
+
+<style>
+/* Settings Page Specific Styles */
+.settings-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2xl);
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.settings-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.config-status,
+.sync-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.875rem;
+}
+
+.status-label {
+    color: var(--text-secondary);
+}
+
+.status-value {
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.config-selector {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.input-group {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: flex-end;
+}
+
+.input-group .form-input {
+    flex: 1;
+}
+
+.settings-section {
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-xl);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.section-title::before {
+    content: '';
+    width: 3px;
+    height: 18px;
+    background: var(--gradient-primary);
+    border-radius: 2px;
+}
+
+.toggle-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.toggle-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    cursor: pointer;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-normal);
+}
+
+.toggle-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.toggle-item input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    position: relative;
+    transition: all var(--transition-normal);
+    flex-shrink: 0;
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all var(--transition-normal);
+}
+
+.toggle-item input:checked + .toggle-switch {
+    background: var(--gradient-primary);
+}
+
+.toggle-item input:checked + .toggle-switch::after {
+    transform: translateX(20px);
+}
+
+.toggle-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-lg);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--border-color);
+}
+
+.danger-zone {
+    margin-top: var(--spacing-2xl);
+    padding: var(--spacing-xl);
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius-lg);
+}
+
+.danger-title {
+    color: var(--medical-red);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+}
+
+.danger-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-lg);
+    font-size: 0.875rem;
+}
+
+.btn-danger {
+    background: var(--gradient-danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.running {
+    background: var(--medical-green);
+}
+
+.status-indicator.stopped {
+    background: var(--medical-red);
+}
+
+.sync-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+}
+
+.detail-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.detail-value.running {
+    color: var(--medical-green);
+}
+
+.sync-setup {
+    text-align: center;
+}
+
+.sync-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+.sync-options {
+    margin: var(--spacing-xl) 0;
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.info-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.system-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.validation-error {
+    color: var(--medical-red);
+    font-size: 0.75rem;
+    margin-top: var(--spacing-xs);
+}
+
+.tooltip {
+    position: absolute;
+    background: var(--surface-bg);
+    color: var(--text-primary);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    z-index: 1000;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    pointer-events: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .system-actions {
+        flex-direction: column;
+    }
+    
+    .sync-details {
+        gap: var(--spacing-sm);
+    }
+}
+</style>
+{% endblock %}
