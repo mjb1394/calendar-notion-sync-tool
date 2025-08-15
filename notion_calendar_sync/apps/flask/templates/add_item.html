@@ -1,0 +1,583 @@
+{% extends "base.html" %}
+{% block title %}Add Task/Event - NurseSync Pro{% endblock %}
+
+{% block content %}
+<header class="content-header">
+    <h1>Create New Item</h1>
+    <p>Add assignments, clinical rotations, study sessions, or exams to your nursing education schedule.</p>
+</header>
+
+<div class="add-item-container">
+    <!-- Item Type Selector -->
+    <div class="item-type-selector">
+        <div class="type-option active" data-type="task">
+            <div class="type-icon">📚</div>
+            <div class="type-content">
+                <h3>Task/Assignment</h3>
+                <p>Homework, projects, care plans</p>
+            </div>
+        </div>
+        <div class="type-option" data-type="event">
+            <div class="type-icon">📅</div>
+            <div class="type-content">
+                <h3>Event/Schedule</h3>
+                <p>Classes, clinical rotations, exams</p>
+            </div>
+        </div>
+        <div class="type-option" data-type="study">
+            <div class="type-icon">🧠</div>
+            <div class="type-content">
+                <h3>Study Session</h3>
+                <p>Review sessions, group study</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('main.add_item') }}" id="add-item-form">
+            <input type="hidden" name="item_type" id="item_type" value="task">
+            
+            <!-- Common Fields -->
+            <div class="form-section">
+                <h3 class="section-title">Basic Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="title" class="form-label">Title *</label>
+                        <input type="text" name="title" id="title" class="form-input" required 
+                               placeholder="e.g., Pharmacology Chapter 5 Review">
+                    </div>
+                    <div class="form-group">
+                        <label for="category" class="form-label">Category</label>
+                        <select name="category" id="category" class="form-select">
+                            <option value="pharmacology">Pharmacology</option>
+                            <option value="pathophysiology">Pathophysiology</option>
+                            <option value="clinical-skills">Clinical Skills</option>
+                            <option value="nursing-theory">Nursing Theory</option>
+                            <option value="anatomy">Anatomy & Physiology</option>
+                            <option value="mental-health">Mental Health</option>
+                            <option value="pediatrics">Pediatrics</option>
+                            <option value="maternity">Maternity</option>
+                            <option value="critical-care">Critical Care</option>
+                            <option value="community">Community Health</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea name="description" id="description" class="form-textarea" rows="3"
+                              placeholder="Add details about this item..."></textarea>
+                </div>
+            </div>
+
+            <!-- Task-specific Fields -->
+            <div id="task-fields" class="form-section">
+                <h3 class="section-title">Task Details</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="due_date" class="form-label">Due Date *</label>
+                        <input type="date" name="due_date" id="due_date" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select name="priority" id="priority" class="form-select">
+                            <option value="low">🟢 Low</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="high">🟠 High</option>
+                            <option value="urgent">🔴 Urgent</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="To Do" selected>📋 To Do</option>
+                            <option value="In Progress">⏳ In Progress</option>
+                            <option value="Review">👀 Review</option>
+                            <option value="Done">✅ Done</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="estimated_hours" class="form-label">Estimated Hours</label>
+                        <input type="number" name="estimated_hours" id="estimated_hours" class="form-input" 
+                               min="0.5" max="20" step="0.5" placeholder="2.0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea name="notes" id="notes" class="form-textarea" rows="4"
+                              placeholder="Study notes, resources, reminders..."></textarea>
+                </div>
+            </div>
+
+            <!-- Event-specific Fields -->
+            <div id="event-fields" class="form-section" style="display: none;">
+                <h3 class="section-title">Event Details</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="event_date" class="form-label">Date *</label>
+                        <input type="date" name="event_date" id="event_date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="start_time" class="form-label">Start Time</label>
+                        <input type="time" name="start_time" id="start_time" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="end_time" class="form-label">End Time</label>
+                        <input type="time" name="end_time" id="end_time" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="event_type" class="form-label">Event Type</label>
+                        <select name="event_type" id="event_type" class="form-select">
+                            <option value="lecture">📚 Lecture</option>
+                            <option value="clinical">🏥 Clinical Rotation</option>
+                            <option value="exam">📝 Exam/Quiz</option>
+                            <option value="lab">🔬 Lab Session</option>
+                            <option value="simulation">🎭 Simulation</option>
+                            <option value="meeting">👥 Meeting</option>
+                            <option value="study-group">📖 Study Group</option>
+                            <option value="other">📌 Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" name="location" id="location" class="form-input" 
+                               placeholder="e.g., Nursing Building Room 205">
+                    </div>
+                    <div class="form-group">
+                        <label for="instructor" class="form-label">Instructor/Contact</label>
+                        <input type="text" name="instructor" id="instructor" class="form-input" 
+                               placeholder="Professor name or contact person">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Study Session Fields -->
+            <div id="study-fields" class="form-section" style="display: none;">
+                <h3 class="section-title">Study Session Details</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="study_date" class="form-label">Study Date *</label>
+                        <input type="date" name="study_date" id="study_date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="study_duration" class="form-label">Duration (hours)</label>
+                        <input type="number" name="study_duration" id="study_duration" class="form-input" 
+                               min="0.5" max="8" step="0.5" value="2" placeholder="2.0">
+                    </div>
+                    <div class="form-group">
+                        <label for="study_method" class="form-label">Study Method</label>
+                        <select name="study_method" id="study_method" class="form-select">
+                            <option value="reading">📖 Reading</option>
+                            <option value="flashcards">🗂️ Flashcards</option>
+                            <option value="practice-questions">❓ Practice Questions</option>
+                            <option value="group-study">👥 Group Study</option>
+                            <option value="video-review">📺 Video Review</option>
+                            <option value="case-studies">📋 Case Studies</option>
+                            <option value="concept-mapping">🗺️ Concept Mapping</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty" class="form-label">Difficulty Level</label>
+                        <select name="difficulty" id="difficulty" class="form-select">
+                            <option value="beginner">🟢 Beginner</option>
+                            <option value="intermediate" selected>🟡 Intermediate</option>
+                            <option value="advanced">🟠 Advanced</option>
+                            <option value="expert">🔴 Expert</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Options -->
+            <div class="form-section">
+                <h3 class="section-title">Advanced Options</h3>
+                <div class="form-options">
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="create_reminders" id="create_reminders" checked>
+                        <span class="checkmark"></span>
+                        <div class="option-content">
+                            <strong>Create Reminders</strong>
+                            <p>Automatically set up spaced repetition reminders</p>
+                        </div>
+                    </label>
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="sync_to_notion" id="sync_to_notion" checked>
+                        <span class="checkmark"></span>
+                        <div class="option-content">
+                            <strong>Sync to Notion</strong>
+                            <p>Add this item to your Notion workspace</p>
+                        </div>
+                    </label>
+                    <label class="option-checkbox">
+                        <input type="checkbox" name="sticky_form" id="sticky_form">
+                        <span class="checkmark"></span>
+                        <div class="option-content">
+                            <strong>Keep Form Data</strong>
+                            <p>Save form data for creating similar items</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="resetForm()">
+                    <span>🔄</span>
+                    Reset
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <span>💾</span>
+                    Save Item
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeOptions = document.querySelectorAll('.type-option');
+    const itemTypeInput = document.getElementById('item_type');
+    const taskFields = document.getElementById('task-fields');
+    const eventFields = document.getElementById('event-fields');
+    const studyFields = document.getElementById('study-fields');
+    const form = document.getElementById('add-item-form');
+
+    // Type selection
+    typeOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            typeOptions.forEach(opt => opt.classList.remove('active'));
+            this.classList.add('active');
+            
+            const type = this.dataset.type;
+            itemTypeInput.value = type;
+            
+            // Show/hide relevant fields
+            taskFields.style.display = type === 'task' ? 'block' : 'none';
+            eventFields.style.display = type === 'event' ? 'block' : 'none';
+            studyFields.style.display = type === 'study' ? 'block' : 'none';
+            
+            // Update required fields
+            updateRequiredFields(type);
+        });
+    });
+
+    function updateRequiredFields(type) {
+        // Remove all required attributes first
+        document.querySelectorAll('[required]').forEach(field => {
+            if (field.id !== 'title') field.removeAttribute('required');
+        });
+        
+        // Add required attributes based on type
+        if (type === 'task') {
+            document.getElementById('due_date').setAttribute('required', '');
+        } else if (type === 'event') {
+            document.getElementById('event_date').setAttribute('required', '');
+        } else if (type === 'study') {
+            document.getElementById('study_date').setAttribute('required', '');
+        }
+    }
+
+    // Form persistence
+    const stickyCheckbox = document.getElementById('sticky_form');
+    
+    function loadFormData() {
+        if (localStorage.getItem('stickyFormActive') !== 'true') return;
+        
+        const data = JSON.parse(localStorage.getItem('nurseSyncFormData') || '{}');
+        
+        Object.keys(data).forEach(key => {
+            const element = document.querySelector(`[name="${key}"]`);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    element.checked = data[key];
+                } else {
+                    element.value = data[key];
+                }
+            }
+        });
+    }
+
+    function saveFormData() {
+        const data = {};
+        const formData = new FormData(form);
+        
+        for (let [key, value] of formData.entries()) {
+            const element = document.querySelector(`[name="${key}"]`);
+            if (element && element.type === 'checkbox') {
+                data[key] = element.checked;
+            } else {
+                data[key] = value;
+            }
+        }
+        
+        localStorage.setItem('nurseSyncFormData', JSON.stringify(data));
+        localStorage.setItem('stickyFormActive', 'true');
+    }
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        if (stickyCheckbox.checked) {
+            saveFormData();
+        } else {
+            localStorage.removeItem('nurseSyncFormData');
+            localStorage.removeItem('stickyFormActive');
+        }
+        
+        // Show loading
+        window.nurseSyncApp.showLoading('Creating item...');
+    });
+
+    // Reset form
+    window.resetForm = function() {
+        form.reset();
+        localStorage.removeItem('nurseSyncFormData');
+        localStorage.removeItem('stickyFormActive');
+        
+        // Reset to task type
+        typeOptions.forEach(opt => opt.classList.remove('active'));
+        typeOptions[0].classList.add('active');
+        itemTypeInput.value = 'task';
+        taskFields.style.display = 'block';
+        eventFields.style.display = 'none';
+        studyFields.style.display = 'none';
+        updateRequiredFields('task');
+    };
+
+    // Auto-save draft
+    let saveTimeout;
+    form.addEventListener('input', function() {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            if (stickyCheckbox.checked) {
+                saveFormData();
+            }
+        }, 1000);
+    });
+
+    // Load saved data
+    loadFormData();
+    
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('due_date').value = today;
+    document.getElementById('event_date').value = today;
+    document.getElementById('study_date').value = today;
+});
+</script>
+
+<style>
+/* Add Item Specific Styles */
+.add-item-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.item-type-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-2xl);
+}
+
+.type-option {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-xl);
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.type-option:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-accent);
+}
+
+.type-option.active {
+    border-color: var(--medical-blue);
+    background: rgba(59, 130, 246, 0.1);
+    box-shadow: var(--shadow-glow);
+}
+
+.type-icon {
+    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-lg);
+    flex-shrink: 0;
+}
+
+.type-content h3 {
+    margin: 0 0 var(--spacing-xs) 0;
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    font-weight: 600;
+}
+
+.type-content p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.form-section {
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-xl);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.section-title::before {
+    content: '';
+    width: 4px;
+    height: 20px;
+    background: var(--gradient-primary);
+    border-radius: 2px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.form-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.option-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    cursor: pointer;
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-normal);
+}
+
+.option-checkbox:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-accent);
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    position: relative;
+    flex-shrink: 0;
+    transition: all var(--transition-normal);
+}
+
+.option-checkbox input:checked + .checkmark {
+    background: var(--gradient-primary);
+    border-color: var(--medical-blue);
+}
+
+.option-checkbox input:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: bold;
+}
+
+.option-checkbox input {
+    display: none;
+}
+
+.option-content strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    display: block;
+    margin-bottom: var(--spacing-xs);
+}
+
+.option-content p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-lg);
+    padding-top: var(--spacing-xl);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Enhanced form inputs */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    border-color: var(--medical-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-select option {
+    background: var(--surface-bg);
+    color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .item-type-selector {
+        grid-template-columns: 1fr;
+    }
+    
+    .type-option {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
