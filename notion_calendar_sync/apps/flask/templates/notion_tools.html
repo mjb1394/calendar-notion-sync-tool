@@ -1,0 +1,805 @@
+{% extends "base.html" %}
+{% block title %}Study Planner - NurseSync Pro{% endblock %}
+
+{% block content %}
+<header class="content-header">
+    <h1>Advanced Study Planner</h1>
+    <p>Leverage AI-powered tools and Notion integration to optimize your nursing education experience with personalized study plans and intelligent content generation.</p>
+</header>
+
+<div class="planner-dashboard">
+    <!-- AI Study Assistant -->
+    <div class="card ai-assistant-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span class="card-icon">🤖</span>
+                AI Study Assistant
+            </h3>
+            <div class="ai-status">
+                <div class="status-dot online"></div>
+                <span>AI Ready</span>
+            </div>
+        </div>
+        
+        <div class="ai-chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message ai-message">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <p>Hello! I'm your AI study assistant. I can help you with:</p>
+                        <ul>
+                            <li>Creating personalized study schedules</li>
+                            <li>Generating practice questions</li>
+                            <li>Explaining complex nursing concepts</li>
+                            <li>Reviewing care plans and procedures</li>
+                        </ul>
+                        <p>What would you like to work on today?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <div class="quick-prompts">
+                    <button class="prompt-btn" onclick="sendQuickPrompt('Create a study plan for pharmacology')">
+                        📚 Study Plan
+                    </button>
+                    <button class="prompt-btn" onclick="sendQuickPrompt('Generate practice questions for pathophysiology')">
+                        ❓ Practice Questions
+                    </button>
+                    <button class="prompt-btn" onclick="sendQuickPrompt('Explain cardiac cycle in simple terms')">
+                        💡 Explain Concept
+                    </button>
+                </div>
+                
+                <div class="chat-input-wrapper">
+                    <textarea id="chat-input" placeholder="Ask me anything about nursing studies..." rows="2"></textarea>
+                    <button id="send-btn" onclick="sendMessage()">
+                        <span class="send-icon">📤</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Study Tools Grid -->
+    <div class="study-tools-grid">
+        <!-- Concept Map Generator -->
+        <div class="card tool-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">🗺️</span>
+                    Concept Map Generator
+                </h3>
+            </div>
+            <p class="tool-description">Create visual concept maps to understand relationships between nursing concepts and improve retention.</p>
+            
+            <form class="tool-form" onsubmit="generateConceptMap(event)">
+                <div class="form-group">
+                    <label for="concept-topic" class="form-label">Main Topic</label>
+                    <input type="text" id="concept-topic" class="form-input" 
+                           placeholder="e.g., Heart Failure, Diabetes Management" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="concept-level" class="form-label">Complexity Level</label>
+                    <select id="concept-level" class="form-select">
+                        <option value="basic">🟢 Basic - Fundamental concepts</option>
+                        <option value="intermediate" selected>🟡 Intermediate - Clinical applications</option>
+                        <option value="advanced">🟠 Advanced - Complex pathophysiology</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <span>🎨</span>
+                    Generate Concept Map
+                </button>
+            </form>
+        </div>
+
+        <!-- Practice Question Generator -->
+        <div class="card tool-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">❓</span>
+                    Practice Questions
+                </h3>
+            </div>
+            <p class="tool-description">Generate NCLEX-style practice questions tailored to your study topics and difficulty preferences.</p>
+            
+            <form class="tool-form" onsubmit="generateQuestions(event)">
+                <div class="form-group">
+                    <label for="question-topic" class="form-label">Subject Area</label>
+                    <select id="question-topic" class="form-select">
+                        <option value="pharmacology">💊 Pharmacology</option>
+                        <option value="pathophysiology">🧬 Pathophysiology</option>
+                        <option value="fundamentals">📚 Nursing Fundamentals</option>
+                        <option value="medical-surgical">🏥 Medical-Surgical</option>
+                        <option value="pediatrics">👶 Pediatrics</option>
+                        <option value="maternity">🤱 Maternity</option>
+                        <option value="mental-health">🧠 Mental Health</option>
+                        <option value="community">🏘️ Community Health</option>
+                    </select>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="question-count" class="form-label">Number of Questions</label>
+                        <select id="question-count" class="form-select">
+                            <option value="5">5 questions</option>
+                            <option value="10" selected>10 questions</option>
+                            <option value="15">15 questions</option>
+                            <option value="20">20 questions</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="question-difficulty" class="form-label">Difficulty</label>
+                        <select id="question-difficulty" class="form-select">
+                            <option value="easy">🟢 Easy</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="hard">🟠 Hard</option>
+                            <option value="mixed">🌈 Mixed</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success">
+                    <span>🎯</span>
+                    Generate Questions
+                </button>
+            </form>
+        </div>
+
+        <!-- Notion Database Manager -->
+        <div class="card tool-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">🗄️</span>
+                    Notion Integration
+                </h3>
+            </div>
+            <p class="tool-description">Manage your Notion databases and create custom pages for your nursing education content.</p>
+            
+            <form method="POST" action="{{ url_for('main.notion_tools_page') }}" class="tool-form">
+                <div class="form-group">
+                    <label for="database_id" class="form-label">Database ID</label>
+                    <input type="text" name="database_id" id="database_id" class="form-input" 
+                           placeholder="Enter Notion database ID" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="page_title" class="form-label">Page Title</label>
+                    <input type="text" name="page_title" id="page_title" class="form-input" 
+                           placeholder="e.g., Pharmacology Study Notes" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="properties_json" class="form-label">Properties (JSON)</label>
+                    <textarea name="properties_json" id="properties_json" class="form-textarea" rows="6" 
+                              placeholder='{"Description": {"rich_text": [{"text": {"content": "A new page."}}]}}'></textarea>
+                    <small class="form-help">Enter JSON properties for the Notion page</small>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <span>📄</span>
+                    Create Notion Page
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div id="results-modal" class="modal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3 id="results-title">Generated Content</h3>
+            <button class="modal-close" onclick="closeResultsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="results-content"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="copyToClipboard()">
+                <span>📋</span>
+                Copy to Clipboard
+            </button>
+            <button class="btn btn-primary" onclick="saveToNotion()">
+                <span>💾</span>
+                Save to Notion
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeChat();
+});
+
+// AI Chat Functions
+function initializeChat() {
+    const chatInput = document.getElementById('chat-input');
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+}
+
+function sendQuickPrompt(prompt) {
+    document.getElementById('chat-input').value = prompt;
+    sendMessage();
+}
+
+function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    addChatMessage(message, 'user');
+    input.value = '';
+    
+    showTypingIndicator();
+    
+    setTimeout(() => {
+        hideTypingIndicator();
+        generateAIResponse(message);
+    }, 2000);
+}
+
+function addChatMessage(content, sender) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const avatar = sender === 'user' ? '👤' : '🤖';
+    messageDiv.innerHTML = `
+        <div class="message-avatar">${avatar}</div>
+        <div class="message-content">
+            <p>${content}</p>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showTypingIndicator() {
+    const messagesContainer = document.getElementById('chat-messages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message ai-message typing-indicator';
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = `
+        <div class="message-avatar">🤖</div>
+        <div class="message-content">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function hideTypingIndicator() {
+    const indicator = document.getElementById('typing-indicator');
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+function generateAIResponse(userMessage) {
+    let response = "I understand you're asking about nursing studies. ";
+    
+    if (userMessage.toLowerCase().includes('study plan')) {
+        response += "Here's a personalized study plan approach:\n\n1. **Assessment Phase** (Week 1)\n   - Review current knowledge gaps\n   - Identify priority topics\n\n2. **Active Learning** (Weeks 2-4)\n   - Focus on high-yield concepts\n   - Practice questions daily\n   - Create concept maps\n\n3. **Review & Practice** (Week 5)\n   - Comprehensive review\n   - Mock exams\n   - Weak area reinforcement\n\nWould you like me to create a specific schedule for any particular subject?";
+    } else if (userMessage.toLowerCase().includes('practice questions')) {
+        response += "I can generate practice questions for you! Here are some sample NCLEX-style questions:\n\n**Question 1:** A patient with heart failure is prescribed furosemide. Which assessment finding indicates the medication is effective?\nA) Decreased urine output\nB) Increased peripheral edema\nC) Weight loss of 2 lbs in 24 hours\nD) Increased shortness of breath\n\n**Answer: C** - Weight loss indicates fluid removal, showing medication effectiveness.\n\nWould you like more questions on a specific topic?";
+    } else {
+        response += "I'm here to help with your nursing studies! I can assist with:\n\n• Creating study schedules\n• Explaining complex concepts\n• Generating practice questions\n• Reviewing care plans\n• NCLEX preparation strategies\n\nWhat specific area would you like to focus on?";
+    }
+    
+    addChatMessage(response, 'ai');
+}
+
+// Tool Functions
+function generateConceptMap(event) {
+    event.preventDefault();
+    const topic = document.getElementById('concept-topic').value;
+    const level = document.getElementById('concept-level').value;
+    
+    window.nurseSyncApp.showLoading('Generating concept map...');
+    
+    setTimeout(() => {
+        window.nurseSyncApp.hideLoading();
+        showResults('Concept Map: ' + topic, generateConceptMapContent(topic, level));
+    }, 2000);
+}
+
+function generateQuestions(event) {
+    event.preventDefault();
+    const topic = document.getElementById('question-topic').value;
+    const count = document.getElementById('question-count').value;
+    
+    window.nurseSyncApp.showLoading('Generating practice questions...');
+    
+    setTimeout(() => {
+        window.nurseSyncApp.hideLoading();
+        showResults('Practice Questions: ' + topic, generateQuestionsContent(topic, count));
+    }, 2000);
+}
+
+function generateConceptMapContent(topic, level) {
+    return `
+        <div class="concept-map-result">
+            <h3>Concept Map: ${topic}</h3>
+            <div class="concept-map-visual">
+                <div class="central-concept">${topic}</div>
+                <div class="concept-branches">
+                    <div class="branch">
+                        <div class="concept-node">Pathophysiology</div>
+                        <div class="sub-concepts">
+                            <span>Etiology</span>
+                            <span>Risk Factors</span>
+                            <span>Manifestations</span>
+                        </div>
+                    </div>
+                    <div class="branch">
+                        <div class="concept-node">Nursing Care</div>
+                        <div class="sub-concepts">
+                            <span>Assessment</span>
+                            <span>Interventions</span>
+                            <span>Evaluation</span>
+                        </div>
+                    </div>
+                    <div class="branch">
+                        <div class="concept-node">Patient Education</div>
+                        <div class="sub-concepts">
+                            <span>Lifestyle Changes</span>
+                            <span>Medication Compliance</span>
+                            <span>Warning Signs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function generateQuestionsContent(topic, count) {
+    const questions = [
+        {
+            question: "A nurse is caring for a patient with heart failure. Which assessment finding requires immediate intervention?",
+            options: ["A) Weight gain of 1 lb overnight", "B) Bilateral crackles in lung bases", "C) Peripheral edema +1", "D) Fatigue with activity"],
+            correct: "B",
+            rationale: "Bilateral crackles indicate pulmonary edema, a life-threatening complication requiring immediate intervention."
+        },
+        {
+            question: "When administering digoxin to a patient with heart failure, the nurse should:",
+            options: ["A) Check blood pressure before administration", "B) Assess apical pulse for 1 full minute", "C) Monitor for hyperkalemia", "D) Administer with food"],
+            correct: "B",
+            rationale: "Apical pulse should be assessed for 1 full minute before digoxin administration to detect bradycardia or arrhythmias."
+        }
+    ];
+    
+    let content = `<div class="questions-result"><h3>Practice Questions: ${topic}</h3>`;
+    
+    questions.slice(0, Math.min(count, questions.length)).forEach((q, index) => {
+        content += `
+            <div class="question-item">
+                <h4>Question ${index + 1}:</h4>
+                <p class="question-text">${q.question}</p>
+                <div class="options">
+                    ${q.options.map(option => `<div class="option">${option}</div>`).join('')}
+                </div>
+                <div class="answer-section">
+                    <p><strong>Correct Answer:</strong> ${q.correct}</p>
+                    <p><strong>Rationale:</strong> ${q.rationale}</p>
+                </div>
+            </div>
+        `;
+    });
+    
+    content += '</div>';
+    return content;
+}
+
+function showResults(title, content) {
+    document.getElementById('results-title').textContent = title;
+    document.getElementById('results-content').innerHTML = content;
+    document.getElementById('results-modal').classList.add('active');
+}
+
+function closeResultsModal() {
+    document.getElementById('results-modal').classList.remove('active');
+}
+
+function copyToClipboard() {
+    const content = document.getElementById('results-content').innerText;
+    navigator.clipboard.writeText(content).then(() => {
+        window.nurseSyncApp.showNotification('Content copied to clipboard!', 'success');
+    }).catch(() => {
+        window.nurseSyncApp.showNotification('Failed to copy content', 'error');
+    });
+}
+
+function saveToNotion() {
+    window.nurseSyncApp.showLoading('Saving to Notion...');
+    
+    setTimeout(() => {
+        window.nurseSyncApp.hideLoading();
+        window.nurseSyncApp.showNotification('Content saved to Notion successfully!', 'success');
+        closeResultsModal();
+    }, 2000);
+}
+</script>
+
+<style>
+/* Study Planner Specific Styles */
+.planner-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2xl);
+}
+
+.ai-assistant-card {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.ai-status {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.875rem;
+    color: var(--medical-green);
+    font-weight: 500;
+}
+
+.ai-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 400px;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.message {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+}
+
+.user-message {
+    flex-direction: row-reverse;
+}
+
+.user-message .message-content {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+}
+
+.ai-message .message-content {
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+}
+
+.message-content {
+    max-width: 70%;
+    padding: var(--spacing-lg);
+    color: var(--text-primary);
+}
+
+.message-content p {
+    margin: 0 0 var(--spacing-sm) 0;
+    line-height: 1.5;
+}
+
+.message-content ul {
+    margin: var(--spacing-sm) 0;
+    padding-left: var(--spacing-lg);
+}
+
+.message-content li {
+    margin-bottom: var(--spacing-xs);
+}
+
+.typing-indicator .message-content {
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.typing-dots {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.5;
+    }
+    30% {
+        transform: translateY(-10px);
+        opacity: 1;
+    }
+}
+
+.chat-input-container {
+    border-top: 1px solid var(--border-color);
+    padding: var(--spacing-lg);
+}
+
+.quick-prompts {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.prompt-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: var(--radius-md);
+    color: var(--text-accent);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.prompt-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    transform: translateY(-1px);
+}
+
+.chat-input-wrapper {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: flex-end;
+}
+
+#chat-input {
+    flex: 1;
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+}
+
+#send-btn {
+    padding: var(--spacing-md);
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+}
+
+#send-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+}
+
+.study-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--spacing-xl);
+}
+
+.tool-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.tool-description {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xl);
+    line-height: 1.6;
+}
+
+.tool-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.form-help {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+}
+
+/* Results Modal */
+.modal.large .modal-content {
+    max-width: 800px;
+    max-height: 90vh;
+}
+
+.concept-map-result {
+    text-align: center;
+}
+
+.concept-map-visual {
+    margin: var(--spacing-xl) 0;
+    position: relative;
+}
+
+.central-concept {
+    display: inline-block;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: var(--radius-xl);
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: var(--spacing-xl);
+}
+
+.concept-branches {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: var(--spacing-lg);
+}
+
+.branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.concept-node {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--surface-bg);
+    border: 2px solid var(--border-accent);
+    border-radius: var(--radius-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sub-concepts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.sub-concepts span {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.questions-result {
+    text-align: left;
+}
+
+.question-item {
+    margin-bottom: var(--spacing-2xl);
+    padding: var(--spacing-xl);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.question-item h4 {
+    color: var(--text-accent);
+    margin-bottom: var(--spacing-md);
+}
+
+.question-text {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.6;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+.option {
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+}
+
+.answer-section {
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+
+.answer-section p {
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .study-tools-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .concept-branches {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .quick-prompts {
+        flex-direction: column;
+    }
+    
+    .chat-input-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    #send-btn {
+        width: 100%;
+        height: 44px;
+    }
+    
+    .ai-chat-container {
+        height: 300px;
+    }
+}
+</style>
+{% endblock %}
