@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - NurseSync Pro{% endblock %}
+
+{% block content %}
+<header class="content-header">
+    <h1>Welcome to NurseSync Pro</h1>
+    <p>Your comprehensive nursing education companion. Track assignments, manage clinical rotations, and optimize your study schedule with intelligent spaced repetition.</p>
+</header>
+
+<!-- Quick Stats Dashboard -->
+<section class="dashboard-grid">
+    <div class="stat-card">
+        <div class="card-icon">📚</div>
+        {% if summary.error %}
+            <div class="stat-number text-danger">!</div>
+            <div class="stat-label">Error Loading Tasks</div>
+            <div class="stat-change negative">{{ summary.error }}</div>
+        {% else %}
+            <div class="stat-number">{{ summary.task_count or 0 }}</div>
+            <div class="stat-label">Active Tasks</div>
+            <div class="stat-change positive">+{{ (summary.task_count or 0) // 4 }} this week</div>
+        {% endif %}
+    </div>
+    
+    <div class="stat-card">
+        <div class="card-icon">📅</div>
+        {% if summary.error %}
+            <div class="stat-number text-danger">!</div>
+            <div class="stat-label">Error Loading Events</div>
+            <div class="stat-change negative">System Error</div>
+        {% else %}
+            <div class="stat-number">{{ summary.event_count or 0 }}</div>
+            <div class="stat-label">Scheduled Events</div>
+            <div class="stat-change positive">{{ (summary.event_count or 0) // 3 }} upcoming</div>
+        {% endif %}
+    </div>
+    
+    <div class="stat-card">
+        <div class="card-icon">🎯</div>
+        <div class="stat-number">{{ ((summary.task_count or 0) * 0.75) | int }}</div>
+        <div class="stat-label">Completion Rate</div>
+        <div class="stat-change positive">+5% from last week</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="card-icon">⚡</div>
+        <div class="stat-number">{{ ((summary.task_count or 0) + (summary.event_count or 0)) // 2 }}</div>
+        <div class="stat-label">Study Sessions</div>
+        <div class="stat-change positive">Optimal pace</div>
+    </div>
+</section>
+
+<!-- Main Dashboard Content -->
+<div class="dashboard-content">
+    <div class="dashboard-row">
+        <!-- Today's Schedule -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">📋</span>
+                    Today's Schedule
+                </h3>
+                <button class="btn btn-outline" onclick="window.location.href='{{ url_for('main.calendar') }}'">
+                    View Calendar
+                </button>
+            </div>
+            <div class="schedule-list">
+                <div class="schedule-item">
+                    <div class="schedule-time">09:00 AM</div>
+                    <div class="schedule-content">
+                        <div class="schedule-title">Pharmacology Review</div>
+                        <div class="schedule-subtitle">Chapter 15-17 • Cardiovascular Drugs</div>
+                    </div>
+                    <div class="schedule-status status-pending">Pending</div>
+                </div>
+                <div class="schedule-item">
+                    <div class="schedule-time">02:00 PM</div>
+                    <div class="schedule-content">
+                        <div class="schedule-title">Clinical Rotation</div>
+                        <div class="schedule-subtitle">ICU • Patient Assessment</div>
+                    </div>
+                    <div class="schedule-status status-confirmed">Confirmed</div>
+                </div>
+                <div class="schedule-item">
+                    <div class="schedule-time">07:00 PM</div>
+                    <div class="schedule-content">
+                        <div class="schedule-title">Study Group</div>
+                        <div class="schedule-subtitle">Pathophysiology • Online</div>
+                    </div>
+                    <div class="schedule-status status-pending">Pending</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">⚡</span>
+                    Quick Actions
+                </h3>
+            </div>
+            <div class="quick-actions">
+                <a href="{{ url_for('main.add_item') }}" class="action-button">
+                    <div class="action-icon">➕</div>
+                    <div class="action-content">
+                        <div class="action-title">Add Task</div>
+                        <div class="action-subtitle">Create new assignment or study goal</div>
+                    </div>
+                </a>
+                <a href="{{ url_for('main.sync_page') }}" class="action-button">
+                    <div class="action-icon">🔄</div>
+                    <div class="action-content">
+                        <div class="action-title">Sync with Notion</div>
+                        <div class="action-subtitle">Update your workspace</div>
+                    </div>
+                </a>
+                <a href="{{ url_for('main.notion_tools_page') }}" class="action-button">
+                    <div class="action-icon">🧠</div>
+                    <div class="action-content">
+                        <div class="action-title">Study Planner</div>
+                        <div class="action-subtitle">Generate study schedule</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard-row">
+        <!-- Study Progress -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">📊</span>
+                    Study Progress
+                </h3>
+            </div>
+            <div class="progress-section">
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span class="progress-label">Pharmacology</span>
+                        <span class="progress-value">85%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 85%"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span class="progress-label">Pathophysiology</span>
+                        <span class="progress-value">72%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 72%"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span class="progress-label">Clinical Skills</span>
+                        <span class="progress-value">91%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 91%"></div>
+                    </div>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span class="progress-label">Nursing Theory</span>
+                        <span class="progress-value">68%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 68%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span class="card-icon">🕒</span>
+                    Recent Activity
+                </h3>
+            </div>
+            <div class="activity-list">
+                <div class="activity-item">
+                    <div class="activity-icon success">✅</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Completed Pharmacology Quiz</div>
+                        <div class="activity-time" data-time="2024-01-01T10:00:00Z">2 hours ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon info">📝</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Added Clinical Rotation Notes</div>
+                        <div class="activity-time" data-time="2024-01-01T08:00:00Z">4 hours ago</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon warning">⏰</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Upcoming: Pathophysiology Exam</div>
+                        <div class="activity-time" data-time="2024-01-03T12:00:00Z">In 2 days</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon success">🔄</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Synced with Notion</div>
+                        <div class="activity-time" data-time="2023-12-31T15:00:00Z">Yesterday</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Study Tips & Insights -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <span class="card-icon">💡</span>
+                Study Insights & Tips
+            </h3>
+        </div>
+        <div class="insights-grid">
+            <div class="insight-card">
+                <div class="insight-icon">🎯</div>
+                <div class="insight-content">
+                    <h4>Optimal Study Time</h4>
+                    <p>Your peak performance is between 9-11 AM. Schedule challenging topics during this window.</p>
+                </div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon">🔄</div>
+                <div class="insight-content">
+                    <h4>Spaced Repetition</h4>
+                    <p>Review Pharmacology concepts in 3 days for optimal retention. Set up automatic reminders.</p>
+                </div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-icon">📈</div>
+                <div class="insight-content">
+                    <h4>Progress Trend</h4>
+                    <p>You're 15% ahead of schedule! Consider adding advanced topics to your study plan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Dashboard-specific styles */
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+.dashboard-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+}
+
+/* Schedule List */
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    transition: all var(--transition-normal);
+}
+
+.schedule-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(4px);
+}
+
+.schedule-time {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text-accent);
+    min-width: 80px;
+}
+
+.schedule-content {
+    flex: 1;
+}
+
+.schedule-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.schedule-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.schedule-status {
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-confirmed {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--medical-green);
+}
+
+.status-pending {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--medical-amber);
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: all var(--transition-normal);
+}
+
+.action-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(4px);
+    border-color: var(--border-accent);
+}
+
+.action-icon {
+    font-size: 1.5rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-md);
+}
+
+.action-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.action-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Progress Section */
+.progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-label {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.progress-value {
+    font-weight: 600;
+    color: var(--text-accent);
+}
+
+.progress-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: 4px;
+    transition: width 1s ease-out;
+}
+
+/* Activity List */
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    transition: background-color var(--transition-normal);
+}
+
+.activity-item:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+.activity-icon.success {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--medical-green);
+}
+
+.activity-icon.info {
+    background: rgba(59, 130, 246, 0.2);
+    color: var(--medical-blue);
+}
+
+.activity-icon.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--medical-amber);
+}
+
+.activity-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.activity-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Insights Grid */
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.insight-card {
+    display: flex;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-normal);
+}
+
+.insight-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.insight-icon {
+    font-size: 1.5rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+}
+
+.insight-content h4 {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.insight-content p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .schedule-item,
+    .action-button {
+        flex-direction: column;
+        text-align: center;
+        gap: var(--spacing-md);
+    }
+    
+    .schedule-time {
+        min-width: auto;
+    }
+}
+</style>
+{% endblock %}
