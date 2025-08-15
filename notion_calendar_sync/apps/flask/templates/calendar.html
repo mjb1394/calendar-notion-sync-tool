@@ -1,0 +1,609 @@
+{% extends "base.html" %}
+{% block title %}Calendar - NurseSync Pro{% endblock %}
+
+{% block content %}
+<header class="content-header">
+    <h1>Study Calendar</h1>
+    <p>Visualize your nursing education schedule, clinical rotations, and study sessions in one comprehensive view.</p>
+</header>
+
+<div class="calendar-controls">
+    <div class="calendar-filters">
+        <div class="filter-group">
+            <label class="filter-label">View:</label>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-view="dayGridMonth">Month</button>
+                <button class="filter-btn" data-view="timeGridWeek">Week</button>
+                <button class="filter-btn" data-view="timeGridDay">Day</button>
+                <button class="filter-btn" data-view="listWeek">Agenda</button>
+            </div>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Categories:</label>
+            <div class="category-filters">
+                <label class="category-filter">
+                    <input type="checkbox" checked data-category="clinical">
+                    <span class="category-color clinical"></span>
+                    Clinical Rotations
+                </label>
+                <label class="category-filter">
+                    <input type="checkbox" checked data-category="study">
+                    <span class="category-color study"></span>
+                    Study Sessions
+                </label>
+                <label class="category-filter">
+                    <input type="checkbox" checked data-category="exam">
+                    <span class="category-color exam"></span>
+                    Exams & Quizzes
+                </label>
+                <label class="category-filter">
+                    <input type="checkbox" checked data-category="assignment">
+                    <span class="category-color assignment"></span>
+                    Assignments
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="calendar-actions">
+        <button class="btn btn-outline" onclick="window.location.href='{{ url_for('main.add_item') }}'">
+            <span>➕</span>
+            Add Event
+        </button>
+        <button class="btn btn-primary" onclick="syncCalendar()">
+            <span>🔄</span>
+            Sync Now
+        </button>
+    </div>
+</div>
+
+<div class="calendar-container">
+    <div id="calendar"></div>
+</div>
+
+<!-- Event Details Modal -->
+<div id="event-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Event Details</h3>
+            <button class="modal-close" onclick="closeEventModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="event-details">
+                <div class="detail-row">
+                    <span class="detail-label">📅 Date:</span>
+                    <span id="event-date" class="detail-value"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">⏰ Time:</span>
+                    <span id="event-time" class="detail-value"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">📍 Location:</span>
+                    <span id="event-location" class="detail-value"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">📝 Description:</span>
+                    <span id="event-description" class="detail-value"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">🏷️ Category:</span>
+                    <span id="event-category" class="detail-value"></span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="editEvent()">Edit</button>
+            <button class="btn btn-primary" onclick="closeEventModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+let calendar;
+let currentEvents = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCalendar();
+    setupCalendarControls();
+    loadCalendarEvents();
+});
+
+function initializeCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 'auto',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: ''
+        },
+        eventClick: function(info) {
+            showEventDetails(info.event);
+        },
+        eventDidMount: function(info) {
+            // Add custom styling based on event category
+            const category = info.event.extendedProps.category || 'default';
+            info.el.classList.add(`event-${category}`);
+        },
+        dayMaxEvents: 3,
+        moreLinkClick: 'popover',
+        eventDisplay: 'block',
+        displayEventTime: true,
+        eventTimeFormat: {
+            hour: 'numeric',
+            minute: '2-digit',
+            meridiem: 'short'
+        }
+    });
+    
+    calendar.render();
+}
+
+function setupCalendarControls() {
+    // View buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            calendar.changeView(this.dataset.view);
+        });
+    });
+    
+    // Category filters
+    document.querySelectorAll('.category-filter input').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            filterEventsByCategory();
+        });
+    });
+}
+
+function loadCalendarEvents() {
+    // Sample events - in a real app, this would fetch from the API
+    const sampleEvents = [
+        {
+            id: '1',
+            title: 'Pharmacology Lecture',
+            start: '2024-01-15T09:00:00',
+            end: '2024-01-15T11:00:00',
+            category: 'study',
+            location: 'Lecture Hall A',
+            description: 'Cardiovascular medications and their mechanisms of action'
+        },
+        {
+            id: '2',
+            title: 'Clinical Rotation - ICU',
+            start: '2024-01-16T07:00:00',
+            end: '2024-01-16T19:00:00',
+            category: 'clinical',
+            location: 'City General Hospital ICU',
+            description: 'Intensive care unit rotation focusing on critical patient care'
+        },
+        {
+            id: '3',
+            title: 'Pathophysiology Exam',
+            start: '2024-01-18T14:00:00',
+            end: '2024-01-18T16:00:00',
+            category: 'exam',
+            location: 'Testing Center',
+            description: 'Comprehensive exam covering chapters 10-15'
+        },
+        {
+            id: '4',
+            title: 'Care Plan Assignment Due',
+            start: '2024-01-20T23:59:00',
+            category: 'assignment',
+            location: 'Online Submission',
+            description: 'Submit comprehensive care plan for assigned patient case study'
+        },
+        {
+            id: '5',
+            title: 'Study Group - Nursing Theory',
+            start: '2024-01-17T18:00:00',
+            end: '2024-01-17T20:00:00',
+            category: 'study',
+            location: 'Library Room 204',
+            description: 'Group study session for upcoming nursing theory quiz'
+        }
+    ];
+    
+    currentEvents = sampleEvents;
+    calendar.removeAllEvents();
+    calendar.addEventSource(sampleEvents);
+}
+
+function filterEventsByCategory() {
+    const activeCategories = [];
+    document.querySelectorAll('.category-filter input:checked').forEach(checkbox => {
+        activeCategories.push(checkbox.dataset.category);
+    });
+    
+    const filteredEvents = currentEvents.filter(event => 
+        activeCategories.includes(event.category)
+    );
+    
+    calendar.removeAllEvents();
+    calendar.addEventSource(filteredEvents);
+}
+
+function showEventDetails(event) {
+    document.getElementById('modal-title').textContent = event.title;
+    document.getElementById('event-date').textContent = event.start.toLocaleDateString();
+    document.getElementById('event-time').textContent = event.allDay ? 'All Day' : 
+        `${event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${event.end ? event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}`;
+    document.getElementById('event-location').textContent = event.extendedProps.location || 'Not specified';
+    document.getElementById('event-description').textContent = event.extendedProps.description || 'No description available';
+    document.getElementById('event-category').textContent = event.extendedProps.category || 'General';
+    
+    document.getElementById('event-modal').classList.add('active');
+}
+
+function closeEventModal() {
+    document.getElementById('event-modal').classList.remove('active');
+}
+
+function editEvent() {
+    // Redirect to edit page or open edit modal
+    window.location.href = '/add_item';
+}
+
+function syncCalendar() {
+    window.nurseSyncApp.showLoading('Syncing calendar...');
+    
+    // Simulate sync process
+    setTimeout(() => {
+        window.nurseSyncApp.hideLoading();
+        window.nurseSyncApp.showNotification('Calendar synced successfully!', 'success');
+        loadCalendarEvents(); // Reload events
+    }, 2000);
+}
+
+// Close modal when clicking outside
+document.getElementById('event-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEventModal();
+    }
+});
+</script>
+
+<style>
+/* Calendar-specific styles */
+.calendar-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
+.calendar-filters {
+    display: flex;
+    gap: var(--spacing-xl);
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.filter-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: transparent;
+}
+
+.category-filters {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.category-filter {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color var(--transition-normal);
+}
+
+.category-filter:hover {
+    color: var(--text-primary);
+}
+
+.category-filter input {
+    margin: 0;
+}
+
+.category-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.category-color.clinical { background: var(--medical-blue); }
+.category-color.study { background: var(--medical-green); }
+.category-color.exam { background: var(--medical-red); }
+.category-color.assignment { background: var(--medical-amber); }
+
+.calendar-actions {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+/* FullCalendar Customization */
+.fc {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.fc-header-toolbar {
+    margin-bottom: var(--spacing-lg) !important;
+}
+
+.fc-toolbar-title {
+    color: var(--text-primary) !important;
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+}
+
+.fc-button-primary {
+    background: var(--gradient-primary) !important;
+    border: none !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 500 !important;
+    transition: all var(--transition-normal) !important;
+}
+
+.fc-button-primary:hover {
+    background: var(--medical-blue) !important;
+    transform: translateY(-1px) !important;
+}
+
+.fc-button-primary:disabled {
+    opacity: 0.5 !important;
+}
+
+.fc-daygrid-day-number {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+}
+
+.fc-col-header-cell-cushion {
+    color: var(--text-accent) !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+}
+
+.fc-daygrid-day.fc-day-today {
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.fc-event {
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all var(--transition-normal) !important;
+}
+
+.fc-event:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.fc-event.event-clinical {
+    background: var(--medical-blue) !important;
+    color: white !important;
+}
+
+.fc-event.event-study {
+    background: var(--medical-green) !important;
+    color: white !important;
+}
+
+.fc-event.event-exam {
+    background: var(--medical-red) !important;
+    color: white !important;
+}
+
+.fc-event.event-assignment {
+    background: var(--medical-amber) !important;
+    color: white !important;
+}
+
+.fc-more-link {
+    color: var(--text-accent) !important;
+    font-weight: 500 !important;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xl);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all var(--transition-normal);
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.modal-body {
+    padding: var(--spacing-xl);
+}
+
+.event-details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.detail-row {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 100px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    padding: var(--spacing-xl);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .calendar-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .calendar-filters {
+        flex-direction: column;
+        gap: var(--spacing-lg);
+    }
+    
+    .filter-buttons {
+        flex-wrap: wrap;
+    }
+    
+    .category-filters {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: var(--spacing-lg);
+    }
+    
+    .fc-toolbar {
+        flex-direction: column !important;
+        gap: var(--spacing-md) !important;
+    }
+    
+    .fc-toolbar-chunk {
+        display: flex !important;
+        justify-content: center !important;
+    }
+}
+</style>
+{% endblock %}
