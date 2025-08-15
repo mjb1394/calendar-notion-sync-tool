@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NurseSync Pro{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏥</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Background Effects -->
+        <div class="bg-effects">
+            <div class="grid-overlay"></div>
+            <div class="floating-particles"></div>
+        </div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">🏥</div>
+                    <div class="logo-text">
+                        <span class="logo-main">NurseSync</span>
+                        <span class="logo-sub">Pro</span>
+                    </div>
+                </div>
+                <div class="user-status">
+                    <div class="status-indicator online"></div>
+                    <span>Connected</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Main</span>
+                    <ul class="nav-list">
+                        <li><a href="{{ url_for('main.index') }}" class="nav-link {{ 'active' if request.endpoint == 'main.index' else '' }}">
+                            <span class="nav-icon">📊</span>
+                            <span class="nav-text">Dashboard</span>
+                        </a></li>
+                        <li><a href="{{ url_for('main.calendar') }}" class="nav-link {{ 'active' if request.endpoint == 'main.calendar' else '' }}">
+                            <span class="nav-icon">📅</span>
+                            <span class="nav-text">Calendar</span>
+                        </a></li>
+                        <li><a href="{{ url_for('main.add_item') }}" class="nav-link {{ 'active' if request.endpoint == 'main.add_item' else '' }}">
+                            <span class="nav-icon">➕</span>
+                            <span class="nav-text">Add Task</span>
+                        </a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <span class="nav-section-title">Study Tools</span>
+                    <ul class="nav-list">
+                        <li><a href="{{ url_for('main.sync_page') }}" class="nav-link {{ 'active' if request.endpoint == 'main.sync_page' else '' }}">
+                            <span class="nav-icon">🔄</span>
+                            <span class="nav-text">Sync & Review</span>
+                        </a></li>
+                        <li><a href="{{ url_for('main.notion_tools_page') }}" class="nav-link {{ 'active' if request.endpoint == 'main.notion_tools_page' else '' }}">
+                            <span class="nav-icon">🧠</span>
+                            <span class="nav-text">Study Planner</span>
+                        </a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <span class="nav-section-title">System</span>
+                    <ul class="nav-list">
+                        <li><a href="{{ url_for('main.build') }}" class="nav-link {{ 'active' if request.endpoint == 'main.build' else '' }}">
+                            <span class="nav-icon">🔧</span>
+                            <span class="nav-text">Build & Export</span>
+                        </a></li>
+                        <li><a href="{{ url_for('main.settings_page') }}" class="nav-link {{ 'active' if request.endpoint == 'main.settings_page' else '' }}">
+                            <span class="nav-icon">⚙️</span>
+                            <span class="nav-text">Settings</span>
+                        </a></li>
+                    </ul>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="sync-status">
+                    <div class="sync-indicator"></div>
+                    <span class="sync-text">Last sync: <span id="last-sync-time">Just now</span></span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-wrapper">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-messages">
+                            {% for category, message in messages %}
+                                <div class="flash flash-{{ category }}">
+                                    <span class="flash-icon">
+                                        {% if category == 'success' %}✅{% elif category == 'error' %}❌{% else %}ℹ️{% endif %}
+                                    </span>
+                                    <span class="flash-text">{{ message }}</span>
+                                    <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Page Content -->
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+        </div>
+        <p class="loading-text">Processing...</p>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
