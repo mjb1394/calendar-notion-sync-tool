@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Build Calendar{% endblock %}
+
+{% block content %}
+<header class="content-header">
+    <h2>Build & Export Calendar</h2>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<div class="form-container">
+    <form method="POST" action="{{ url_for('main.build') }}">
+        <div class="form-group">
+            <label for="view">View</label>
+            <select name="view" id="view">
+                <option value="monthly">Monthly</option>
+                <option value="weekly">Weekly</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="year">Year</label>
+            <input type="number" name="year" id="year" value="2024">
+        </div>
+        <div class="form-group">
+            <label for="month">Month (1-12)</label>
+            <input type="number" name="month" id="month" value="1">
+        </div>
+        <div class="form-group">
+            <label for="week">Week (any date in week)</label>
+            <input type="date" name="week" id="week">
+        </div>
+        <div class="form-group">
+            <label for="format">Format</label>
+            <select name="format" id="format">
+                <option value="pdf">PDF</option>
+                <option value="docx">DOCX</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <input type="checkbox" name="include_tasks" id="include_tasks" value="true" class="checkbox-input">
+            <label for="include_tasks" class="checkbox-label">Include Tasks</label>
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn">Build & Download</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
