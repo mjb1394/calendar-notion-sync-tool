@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "notion-student-sync"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+    "pydantic",
+    "pydantic-settings",
+    "ics",
+    "python-dateutil",
+    "arrow",
+    "tenacity",
+    "tatsu==4.4.0",
+    "flask",
+    "waitress",
+    "python-dotenv",
+    "requests",
+    "typer",
+    "reportlab",
+    "python-docx",
+    "babel",
+    "eval_type_backport",
+    "APScheduler"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["notion_calendar_sync*"]
+exclude = ["tests*"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+plugins = [
+  "pydantic.mypy"
+]
